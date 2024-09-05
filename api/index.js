@@ -1,43 +1,48 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import userRoutes from './routes/user.route.js';
-import authRoutes from './routes/auth.route.js';
-import postRoutes from './routes/post.route.js';
-import commentRoutes from './routes/comment.route.js';
-import cookieParser from 'cookie-parser';
-import path from 'path';
+  const express = require('express');
+  const mongoose = require('mongoose');
+  const cors = require('cors');
+  const errorHandler = require('./utils/errorHandler');
+  const path = require('path');
+ 
+  require('dotenv').config();
+
+  const app = express();
+
+  // Middleware
+  app.use(express.json());
+  app.use(cors()); // Enable CORS
+
+  // Connect to Database
+  mongoose.connect(process.env.MONGO, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000, // Adjust as needed
+    socketTimeoutMS: 45000, // Adjust as needed
+  })
+    .then(() => {
+      console.log('Database connection successful 🤞');
+    })
+    .catch((err) => {
+      console.error('MongoDB connection error:', err);
+      process.exit(1); // Exit the process with failure
+    });
+
+  // Import Routes
+  // const authRoutes = require('../routes/authRoutes');
+  const teacherRoutes = require('./routes/teacherRoutes');
+  const userRouter = require('./routes/userRouter');
+
+  // Use Routes
+  // app.use('/api/auth', authRoutes);
+  app.use('/api/auth', userRouter);
+  app.use('/api/teachers', teacherRoutes);
+
+  // Error Handling Middleware
+  app.use(errorHandler);
+  app.use('/uploads', express.static('uploads')); // Serve static files from the uploads directory
 
 
-dotenv.config();
-
-mongoose.connect(
-    process.env.MONGO
-)
-.then(
-    () => {console.log('abdirahmaan database is connecting')}
-)
-.catch((err) => {
-    console.log(err);
-  });
-
-  const __dirname = path.resolve();
-
-const app = express();
-
-app.use(express.json());
-app.use(cookieParser());
-
-app.listen(4000, () => {
-  console.log('Server is running on port 5000!');
-});
-
-app.use('/api/user', userRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/post', postRoutes);
-app.use('/api/comment', commentRoutes);
-
-app.use(express.static(path.join(__dirname, '/client/dist')));
+ app.use(express.static(path.join(__dirname, '/client/dist')));
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'client', 'dist', 'index.html'));
@@ -53,4 +58,10 @@ app.use((err, req, res, next) => {
     message,
   });
 });
+// Define the port
+const PORT = process.env.PORT || 5000;
 
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT} 🚀`);
+});
