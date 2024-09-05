@@ -1,54 +1,56 @@
-  const express = require('express');
-  const mongoose = require('mongoose');
-  const cors = require('cors');
-  const errorHandler = require('./utils/errorHandler');
-  const path = require('path');
- 
-  require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const errorHandler = require('./utils/errorHandler');
+const path = require('path');
+require('dotenv').config();
 
-  const app = express();
+const app = express();
 
-  // Middleware
-  app.use(express.json());
-  app.use(cors()); // Enable CORS
+// Middleware
+app.use(express.json());
+app.use(cors()); // Enable CORS
 
-  // Connect to Database
-  mongoose.connect(process.env.MONGO, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 5000, // Adjust as needed
-    socketTimeoutMS: 45000, // Adjust as needed
+// Connect to Database
+mongoose.connect(process.env.MONGO, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 5000, // Adjust as needed
+  socketTimeoutMS: 45000, // Adjust as needed
+})
+  .then(() => {
+    console.log('Database connection successful 🤞');
   })
-    .then(() => {
-      console.log('Database connection successful 🤞');
-    })
-    .catch((err) => {
-      console.error('MongoDB connection error:', err);
-      process.exit(1); // Exit the process with failure
-    });
+  .catch((err) => {
+    console.error('MongoDB connection error:', err);
+    process.exit(1); // Exit the process with failure
+  });
 
-  // Import Routes
-  // const authRoutes = require('../routes/authRoutes');
-  const teacherRoutes = require('./routes/teacherRoutes');
-  const userRouter = require('./routes/userRouter');
+// Import Routes
+// Ensure the correct paths and file names are used
+// Uncomment and adjust the authRoutes import as needed
+// const authRoutes = require('./routes/authRoutes');
+const teacherRoutes = require('./routes/teacherRoutes');  // Ensure teacherRoutes exists
+const userRouter = require('./routes/userRouter');        // Ensure userRouter exists and path is correct
 
-  // Use Routes
-  // app.use('/api/auth', authRoutes);
-  app.use('/api/auth', userRouter);
-  app.use('/api/teachers', teacherRoutes);
+// Use Routes
+// app.use('/api/auth', authRoutes);  // Uncomment if you have authRoutes
+app.use('/api/auth', userRouter);   // Ensure this is pointing to the correct router for authentication
+app.use('/api/teachers', teacherRoutes); // Teacher routes should work now
 
-  // Error Handling Middleware
-  app.use(errorHandler);
-  app.use('/uploads', express.static('uploads')); // Serve static files from the uploads directory
+// Error Handling Middleware
+app.use(errorHandler);
 
+// Static File Handling for client-side files
+app.use('/uploads', express.static('uploads')); // Serve static files from the 'uploads' directory
+app.use(express.static(path.join(__dirname, '/client/dist'))); // Serve client build files
 
- app.use(express.static(path.join(__dirname, '/client/dist')));
-
+// Serve client entry point for all non-API routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'client', 'dist', 'index.html'));
 });
 
-
+// Centralized Error Handler for uncaught errors
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
@@ -58,8 +60,9 @@ app.use((err, req, res, next) => {
     message,
   });
 });
-// Define the port
-const PORT = process.env.PORT || 5000;
+
+// Define the port from environment variables or fallback to 5000
+const PORT = process.env.PORT || 3000;
 
 // Start the server
 app.listen(PORT, () => {
